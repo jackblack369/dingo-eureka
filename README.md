@@ -64,3 +64,34 @@ cmake ..
 
 make -j 32
 ```
+
+## Submodule Version
+
+| Name              | Version       |
+| ----------------- | ------------- |
+| gflags            | master        |
+| glog              | v0.6.0        |
+| googletest        | main          |
+| fmt               | master        |
+| nlohmann-json     | develop       |
+| rapidjson         | master        |
+| jsoncpp           | master        |
+| zlib              | v1.3.1        |
+| protobuf          | v3.25.5       |
+| protobuf          | v3.25.5       |
+| grpc              | v1.62.2       |
+| snappy            | main          |
+| leveldb           | main          |
+| leveldb           | main          |
+| brpc              | 1.11.0        |
+| rocksdb           | v9.9.3        |
+| incbin            | main          |
+| libfiu            | master        |
+| c4c32c            | main          |
+| memcache          | v1.x          |
+| spdlog            | v1.x          |
+| curl              | curl-8_9_1    |
+| opentelemetry-cpp | main          |
+| aws-sdk-cpp       | 1.11.400      |
+| libuuid           | master        |
+| hdf5              | hdf5_1.14.4.2 |
