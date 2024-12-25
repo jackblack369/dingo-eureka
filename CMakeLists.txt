@@ -147,7 +147,8 @@ ExternalProject_Add(openssl
     PREFIX openssl
     SOURCE_DIR ${OPENSSL_SOURCES_DIR}
     BINARY_DIR ${OPENSSL_BINARY_DIR}
-    CONFIGURE_COMMAND sh ${OPENSSL_SOURCES_DIR}/config -DOPENSSL_NO_SCTP -DOPENSSL_NO_KTLS  -DOPENSSL_USE_NODELETE -DOPENSSL_PIC -no-shared --prefix=${INSTALL_PATH} --libdir=lib BUILD_COMMAND $(MAKE)
+    CONFIGURE_COMMAND sh ${OPENSSL_SOURCES_DIR}/config -DOPENSSL_NO_SCTP -DOPENSSL_NO_KTLS  -DOPENSSL_USE_NODELETE -DOPENSSL_PIC -no-shared --prefix=${INSTALL_PATH} --libdir=lib 
+    BUILD_COMMAND $(MAKE)
     INSTALL_COMMAND ${CMAKE_COMMAND} -E chdir ${OPENSSL_BINARY_DIR} $(MAKE) install_sw
 )
 
@@ -348,6 +349,26 @@ ExternalProject_Add(braft
     DEPENDS brpc
 )
 
+# use by rocksdb
+ExternalProject_Add(lz4
+    PREFIX lz4
+    SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/lz4
+    CONFIGURE_COMMAND ""
+    BUILD_IN_SOURCE 1
+    BUILD_COMMAND $(MAKE)
+    INSTALL_COMMAND ${CMAKE_COMMAND} -E chdir <SOURCE_DIR> $(MAKE) PREFIX=${INSTALL_PATH} install
+)
+
+# use by rocksdb
+ExternalProject_Add(zstd
+    PREFIX zstd
+    SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/zstd
+    CONFIGURE_COMMAND ""
+    BUILD_IN_SOURCE 1
+    BUILD_COMMAND $(MAKE)
+    INSTALL_COMMAND ${CMAKE_COMMAND} -E chdir <SOURCE_DIR> $(MAKE) PREFIX=${INSTALL_PATH} install
+)
+
 # used by fs
 ExternalProject_Add(rocksdb
     PREFIX rocksdb
@@ -356,8 +377,8 @@ ExternalProject_Add(rocksdb
         -DCMAKE_PREFIX_PATH=${INSTALL_PATH}
         -DPORTABLE=ON
         -DWITH_SNAPPY=ON
-        # -DWITH_LZ4=ON
-        # -DWITH_ZSTD=ON
+        -DWITH_LZ4=ON
+        -DWITH_ZSTD=ON
         -DWITH_ZLIB=ON
         -DWITH_RUNTIME_DEBUG=ON
         -DROCKSDB_BUILD_SHARED=OFF
@@ -371,7 +392,61 @@ ExternalProject_Add(rocksdb
         -DZLIB_ROOT:STRING=${INSTALL_PATH}
         -DCMAKE_INSTALL_PREFIX:PATH=${INSTALL_PATH}
         -DCMAKE_INSTALL_LIBDIR:PATH=${INSTALL_PATH}/lib
-  DEPENDS gflags zlib snappy
+  DEPENDS gflags zlib snappy lz4 zstd
+)
+
+SET(LIBUNWIND_SOURCES_DIR ${CMAKE_CURRENT_SOURCE_DIR}/libunwind)
+SET(LIBUNWIND_BINARY_DIR ${CMAKE_CURRENT_BINARY_DIR}/libunwind/build)
+ExternalProject_Add(libunwind
+    PREFIX libunwind
+    SOURCE_DIR ${LIBUNWIND_SOURCES_DIR}
+    BINARY_DIR ${LIBUNWIND_BINARY_DIR}
+    CONFIGURE_COMMAND autoreconf -i ${LIBUNWIND_SOURCES_DIR}
+        COMMAND ${LIBUNWIND_SOURCES_DIR}/configure --prefix ${INSTALL_PATH} --disable-minidebuginfo --enable-static --enable-shared=no --with-pic --disable-msabi-support
+    BUILD_COMMAND $(MAKE)
+    INSTALL_COMMAND $(MAKE) install
+)
+
+if(NOT DEFINED GPERFTOOLS_SETUP_DONE)
+    SET(GPERFTOOLS_SOURCES_DIR ${CMAKE_CURRENT_SOURCE_DIR}/gperftools)
+    SET(GPERFTOOLS_BUILD_DIR ${CMAKE_CURRENT_BINARY_DIR}/gperftools/build)
+    file(WRITE ${GPERFTOOLS_BUILD_DIR}/copy_repo.sh
+         "mkdir -p ${GPERFTOOLS_BUILD_DIR} && cp -rf ${GPERFTOOLS_SOURCES_DIR}/* ${GPERFTOOLS_BUILD_DIR}/")
+    execute_process(COMMAND sh ${GPERFTOOLS_BUILD_DIR}/copy_repo.sh)
+    ExternalProject_Add(gperftools
+        PREFIX gperftools
+        SOURCE_DIR ${GPERFTOOLS_BUILD_DIR}
+        BUILD_IN_SOURCE 1
+        CONFIGURE_COMMAND sh autoreconf -i -f 
+            COMMAND patch --forward -t --reject-file=- m4/libtool.m4 m4/libtool.patch 
+            COMMAND sh autoreconf -i
+            COMMAND sh configure --prefix=${INSTALL_PATH} --enable-shared=no --enable-static=yes --with-pic --enable-libunwind --enable-cpu-profiler --enable-heap-profiler --enable-heap-checker
+        BUILD_COMMAND $(MAKE)
+        INSTALL_COMMAND $(MAKE) install
+      DEPENDS libunwind
+    )
+
+    set(GPERFTOOLS_SETUP_DONE TRUE)
+endif()
+
+SET(LIBURING_SOURCES_DIR ${CMAKE_CURRENT_SOURCE_DIR}/liburing)
+ExternalProject_Add(liburing
+    PREFIX liburing
+    SOURCE_DIR ${LIBURING_SOURCES_DIR}
+    BUILD_IN_SOURCE 1
+    CONFIGURE_COMMAND sh ${LIBURING_SOURCES_DIR}/configure  --prefix=${INSTALL_PATH} 
+    BUILD_COMMAND $(MAKE)
+    INSTALL_COMMAND $(MAKE) install
+)
+
+SET(LIBBACKTRACE_SOURCES_DIR ${CMAKE_CURRENT_SOURCE_DIR}/libbacktrace)
+ExternalProject_Add(libbacktrace
+    PREFIX libbacktrace
+    SOURCE_DIR ${LIBBACKTRACE_SOURCES_DIR}
+    BUILD_IN_SOURCE 1
+    CONFIGURE_COMMAND sh ${LIBBACKTRACE_SOURCES_DIR}/configure  --prefix=${INSTALL_PATH} 
+    BUILD_COMMAND $(MAKE) AM_CFLAGS=-fPIC
+    INSTALL_COMMAND $(MAKE) install
 )
 
 # used by fs
@@ -491,6 +566,7 @@ ExternalProject_Add(aws-sdk-cpp
         -DENABLE_TESTING=OFF
         -DAUTORUN_UNIT_TESTS=OFF
         -DBUILD_ONLY=s3
+        -DBUILD_OPTEL=ON
         -DBUILD_OPTEL_OTLP_BENCHMARKS=ON # if not turn on the opentelemetry cmake find will fail[
     CMAKE_CACHE_ARGS
         -DCMAKE_POSITION_INDEPENDENT_CODE:BOOL=TRUE
