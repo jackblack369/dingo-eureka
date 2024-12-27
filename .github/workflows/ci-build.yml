@@ -62,7 +62,7 @@ jobs:
       id: meta
       uses: docker/metadata-action@v5
       with:
-        images: dingodatabase/dingo-eureka
+        images: jackblack369/dingo-eureka
         tags: |
           type=raw,enable=${{ env.EVENT_TYPE == 'TAG' }},value=${{ env.TAG_NAME }}
           type=raw,value=latest,enable={{is_default_branch}}

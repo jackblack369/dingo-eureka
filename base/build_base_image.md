@@ -12,4 +12,3 @@ For different operating systems, we can refer to the following commands to build
 cd dingo-eureka 
 
 docker build base -t dingodatabase/dingo-base:rocky9
-``````
