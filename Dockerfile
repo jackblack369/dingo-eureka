@@ -10,9 +10,8 @@ COPY . .
 
 # Build and install
 RUN mkdir build && cd build && \
-    cmake -DCMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH} \
-         -DINSTALL_PATH=${INSTALL_PATH} .. && \
-    make -j $(nproc)
+    cmake .. && \
+    make -j 32
 
 # Final stage
 FROM dingodatabase/dingofs-base:rocky9

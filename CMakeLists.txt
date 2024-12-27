@@ -369,6 +369,16 @@ ExternalProject_Add(zstd
     INSTALL_COMMAND ${CMAKE_COMMAND} -E chdir <SOURCE_DIR> $(MAKE) PREFIX=${INSTALL_PATH} install
 )
 
+SET(LIBURING_SOURCES_DIR ${CMAKE_CURRENT_SOURCE_DIR}/liburing)
+ExternalProject_Add(liburing
+    PREFIX liburing
+    SOURCE_DIR ${LIBURING_SOURCES_DIR}
+    BUILD_IN_SOURCE 1
+    CONFIGURE_COMMAND sh ${LIBURING_SOURCES_DIR}/configure  --prefix=${INSTALL_PATH} 
+    BUILD_COMMAND $(MAKE)
+    INSTALL_COMMAND $(MAKE) install
+)
+
 # used by fs
 ExternalProject_Add(rocksdb
     PREFIX rocksdb
@@ -392,7 +402,7 @@ ExternalProject_Add(rocksdb
         -DZLIB_ROOT:STRING=${INSTALL_PATH}
         -DCMAKE_INSTALL_PREFIX:PATH=${INSTALL_PATH}
         -DCMAKE_INSTALL_LIBDIR:PATH=${INSTALL_PATH}/lib
-  DEPENDS gflags zlib snappy lz4 zstd
+  DEPENDS gflags zlib snappy lz4 zstd liburing
 )
 
 SET(LIBUNWIND_SOURCES_DIR ${CMAKE_CURRENT_SOURCE_DIR}/libunwind)
@@ -428,16 +438,6 @@ if(NOT DEFINED GPERFTOOLS_SETUP_DONE)
 
     set(GPERFTOOLS_SETUP_DONE TRUE)
 endif()
-
-SET(LIBURING_SOURCES_DIR ${CMAKE_CURRENT_SOURCE_DIR}/liburing)
-ExternalProject_Add(liburing
-    PREFIX liburing
-    SOURCE_DIR ${LIBURING_SOURCES_DIR}
-    BUILD_IN_SOURCE 1
-    CONFIGURE_COMMAND sh ${LIBURING_SOURCES_DIR}/configure  --prefix=${INSTALL_PATH} 
-    BUILD_COMMAND $(MAKE)
-    INSTALL_COMMAND $(MAKE) install
-)
 
 SET(LIBBACKTRACE_SOURCES_DIR ${CMAKE_CURRENT_SOURCE_DIR}/libbacktrace)
 ExternalProject_Add(libbacktrace
