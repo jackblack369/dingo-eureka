@@ -23,10 +23,10 @@ jobs:
         github-token: ${{ secrets.GH_TOKEN }}
         path: ./
 
-    - name: Download dingofs artifact
+    - name: Download eureka artifact
       uses: actions/download-artifact@v4
       with:
-        name: dingofs
+        name: eureka
         run-id: ${{ github.event.workflow_run.id }}
         github-token: ${{ secrets.GH_TOKEN }}
         path: ./
@@ -90,7 +90,7 @@ jobs:
       id: meta
       uses: docker/metadata-action@v5
       with:
-        images: dingodatabase/dingofs
+        images: dingodatabase/dingo-eureka
         tags: |
           type=raw,enable=${{ env.EVENT == 'tag' }},value=${{ env.TAG_NAME }}
           type=raw,value=latest,enable={{is_default_branch}}
